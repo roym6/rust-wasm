@@ -28,4 +28,6 @@ COPY /www/index.html ./
 COPY /www/index.js ./
 COPY /www/webpack.config.js ./
 
+EXPOSE 8080
+
 CMD ["npm", "start"]
