@@ -10,6 +10,7 @@ pub struct Fps {
 #[wasm_bindgen]
 impl Fps {
     pub fn render(&mut self) {
+        // TODO: avg and max initially show as `inf`, why?
         let now = web_sys::window().unwrap().performance().unwrap().now();
         let delta = now - self.last_time_stamp;
         self.last_time_stamp = now;
@@ -20,8 +21,8 @@ impl Fps {
             self.frames.remove(0);
         }
 
-        let mut min = std::f64::MAX;
-        let mut max = std::f64::MIN;
+        let mut min = f64::MAX;
+        let mut max = f64::MIN;
         let mut sum = 0f64;
         for frame in self.frames.iter() {
             sum += frame;
