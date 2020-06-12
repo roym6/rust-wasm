@@ -11,10 +11,6 @@ pub struct Universe {
 }
 
 impl Universe {
-    fn get_index(&self, row: u32, column: u32) -> usize {
-        (row * self.width + column) as usize
-    }
-
     fn live_neighbor_count(&self, row: u32, column: u32) -> u8 {
         let mut count = 0;
 
@@ -62,8 +58,6 @@ impl Universe {
     }
 }
 
-// Public methods, exported to Javascript
-#[wasm_bindgen]
 impl Universe {
     pub fn width(&self) -> u32 {
         self.width
@@ -73,8 +67,12 @@ impl Universe {
         self.height
     }
 
-    pub fn cells(&self) -> *const Cell {
-        self.cells.as_ptr()
+    pub fn get_index(&self, row: u32, column: u32) -> usize {
+        (row * self.width + column) as usize
+    }
+
+    pub fn cells(&self) -> &Vec<Cell> {
+        &self.cells
     }
     pub fn tick(&mut self) {
         let mut next = self.cells.clone();
@@ -86,9 +84,8 @@ impl Universe {
                 let live_neighbors = self.live_neighbor_count(row, col);
 
                 let next_cell = match (cell, live_neighbors) {
-                    (Cell::Alive, x) if x < 2 => Cell::Dead,
                     (Cell::Alive, 2) | (Cell::Alive, 3) => Cell::Alive,
-                    (Cell::Alive, x) if x > 3 => Cell::Dead,
+                    (Cell::Alive, _) => Cell::Dead,
                     (Cell::Dead, 3) => Cell::Alive,
                     (otherwise, _) => otherwise,
                 };

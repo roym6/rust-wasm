@@ -1,3 +1,4 @@
+use crate::utils::{element_by_id, performance};
 use wasm_bindgen::prelude::*;
 
 #[wasm_bindgen]
@@ -11,7 +12,7 @@ pub struct Fps {
 impl Fps {
     pub fn render(&mut self) {
         // TODO: avg and max initially show as `inf`, why?
-        let now = web_sys::window().unwrap().performance().unwrap().now();
+        let now = performance().now();
         let delta = now - self.last_time_stamp;
         self.last_time_stamp = now;
         let fps = (1f64 / delta) * 1000f64;
@@ -25,7 +26,7 @@ impl Fps {
         let mut max = f64::MIN;
         let mut sum = 0f64;
         for frame in self.frames.iter() {
-            sum += frame;
+            sum += *frame;
             min = min.min(*frame);
             max = max.max(*frame);
         }
@@ -47,15 +48,11 @@ impl Fps {
             .as_str(),
         ));
     }
-    pub fn new() -> Option<Fps> {
-        let window = web_sys::window()?;
-        let element = window.document()?.get_element_by_id("fps")?;
-        let performance = window.performance()?;
-
-        Some(Fps {
-            element,
+    pub fn new() -> Fps {
+        Fps {
+            element: element_by_id("fps"),
             frames: vec![],
-            last_time_stamp: performance.now(),
-        })
+            last_time_stamp: performance().now(),
+        }
     }
 }

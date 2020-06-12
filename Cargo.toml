@@ -32,6 +32,12 @@ features = [
   'Window',
   'Document',
   'Element',
+  'DomRect',
+  'HtmlButtonElement',
+  'HtmlCanvasElement',
+  'CanvasRenderingContext2d',
+  'EventTarget',
+  'MouseEvent',
   'Performance',
 ]
 
@@ -41,3 +47,4 @@ wasm-bindgen-test = "0.3.13"
 [profile.release]
 # Tell `rustc` to optimize for small code size.
 opt-level = "s"
+debug = true
