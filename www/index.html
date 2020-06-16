@@ -22,12 +22,18 @@
         white-space: pre;
         font-family: monospace;
       }
+      .controls {
+        display: flex;
+      }
     </style>
   </head>
   <body>
     <body>
       <div id="fps"></div>
-      <button id="play-pause"></button>
+      <div class="controls">
+        <button id="play-pause"></button>
+        <button id="clear">Clear</button>
+      </div>
       <canvas id="game-of-life-canvas"></canvas>
       <script src="./bootstrap.js"></script>
     </body>

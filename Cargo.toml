@@ -39,6 +39,7 @@ features = [
   'EventTarget',
   'MouseEvent',
   'Performance',
+  'console',
 ]
 
 [dev-dependencies]

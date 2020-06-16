@@ -97,6 +97,10 @@ impl Universe {
         self.cells = next;
     }
 
+    pub fn clear(&mut self) {
+        self.cells = vec![Cell::Dead; (self.width * self.height) as usize];
+    }
+
     pub fn new() -> Universe {
         let width = 128;
         let height = 128;
