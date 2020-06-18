@@ -214,26 +214,42 @@ fn add_drag_handlers(
             let prefab_height = prefab_universe.borrow().as_ref().unwrap().height();
             let prefab_width = prefab_universe.borrow().as_ref().unwrap().width();
 
-            let row = ((canvas_top / (CELL_SIZE + 1) as f64) - (prefab_height / 2) as f64)
-                .round()
-                .min(height as f64 - 1f64) as u32;
-            let col = ((canvas_left / (CELL_SIZE + 1) as f64) - (prefab_width / 2) as f64)
-                .round()
-                .min(width as f64 - 1f64) as u32;
+            let row = (canvas_top / (CELL_SIZE + 1) as f64) - ((prefab_height / 2) as f64).floor();
+            let row = if prefab_height % 2 == 1 {
+                row.floor()
+            } else {
+                row.round()
+            };
+            let row = row.min(height as f64 - 1f64) as u32;
+            let col = (canvas_left / (CELL_SIZE + 1) as f64) - ((prefab_width / 2) as f64).floor();
+            let col = if prefab_width % 2 == 1 {
+                col.floor()
+            } else {
+                col.round()
+            };
+            let col = col.min(width as f64 - 1f64) as u32;
 
             let hover_style = JsValue::from(String::from(HOVER_COLOR));
             context.set_fill_style(&hover_style);
             for prefab_row in 0..prefab_height {
                 for prefab_col in 0..prefab_width {
-                    context.fill_rect(
-                        ((col + prefab_col) * (CELL_SIZE + 1) + 1) as f64,
-                        ((row + prefab_row) * (CELL_SIZE + 1) + 1) as f64,
-                        CELL_SIZE as f64,
-                        CELL_SIZE as f64,
-                    );
-                    painted_cells
-                        .borrow_mut()
-                        .push((row + prefab_row, col + prefab_col));
+                    let idx = prefab_universe
+                        .borrow()
+                        .as_ref()
+                        .unwrap()
+                        .get_index(prefab_row, prefab_col);
+                    if prefab_universe.borrow().as_ref().unwrap().cells()[idx] == cell::Cell::Alive
+                    {
+                        context.fill_rect(
+                            ((col + prefab_col) * (CELL_SIZE + 1) + 1) as f64,
+                            ((row + prefab_row) * (CELL_SIZE + 1) + 1) as f64,
+                            CELL_SIZE as f64,
+                            CELL_SIZE as f64,
+                        );
+                        painted_cells
+                            .borrow_mut()
+                            .push((row + prefab_row, col + prefab_col));
+                    }
                 }
             }
 
