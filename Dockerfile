@@ -28,6 +28,10 @@ COPY /www/index.html ./
 COPY /www/index.js ./
 COPY /www/webpack.config.js ./
 
-EXPOSE 8080
+RUN npm run build
 
-CMD ["npm", "start"]
+FROM nginx:alpine
+COPY ./nginx.conf /etc/nginx/
+COPY --from=web-dependency-builder \
+  /www/dist/ \
+  /usr/share/nginx/html/
