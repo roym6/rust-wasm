@@ -1,6 +1,3 @@
-use wasm_bindgen::prelude::*;
-
-#[wasm_bindgen]
 #[repr(u8)] // Represent Cells as single byte
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Cell {

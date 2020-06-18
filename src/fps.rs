@@ -1,14 +1,11 @@
 use crate::utils::{element_by_id, performance};
-use wasm_bindgen::prelude::*;
 
-#[wasm_bindgen]
 pub struct Fps {
     element: web_sys::Element,
     frames: Vec<f64>,
     last_time_stamp: f64,
 }
 
-#[wasm_bindgen]
 impl Fps {
     pub fn render(&mut self) {
         // TODO: avg and max initially show as `inf`, why?

@@ -1,9 +1,7 @@
 use std::fmt;
-use wasm_bindgen::prelude::*;
 
 use crate::cell::Cell;
 
-#[wasm_bindgen]
 pub struct Universe {
     width: u32,
     height: u32,
@@ -138,10 +136,6 @@ impl Universe {
             height,
             cells,
         }
-    }
-
-    pub fn render(&self) -> String {
-        self.to_string()
     }
 
     pub fn toggle_cell(&mut self, row: u32, column: u32) {
