@@ -102,8 +102,8 @@ impl Universe {
     }
 
     pub fn new() -> Universe {
-        let width = 128;
-        let height = 128;
+        let width = 64;
+        let height = 64;
 
         let cells = (0..width * height)
             .map(|i| {
@@ -113,6 +113,24 @@ impl Universe {
                     Cell::Dead
                 }
             })
+            .collect();
+
+        Universe {
+            width,
+            height,
+            cells,
+        }
+    }
+
+    // Could impl From, but keeping it simple for now
+    pub fn from(html_elem: web_sys::HtmlElement) -> Universe {
+        let data = html_elem.dataset();
+        let height = data.get("height").unwrap().parse::<u32>().unwrap();
+        let width = data.get("width").unwrap().parse::<u32>().unwrap();
+        let pattern = data.get("pattern").unwrap();
+        let cells = pattern
+            .chars()
+            .map(|char| if char == '1' { Cell::Alive } else { Cell::Dead })
             .collect();
 
         Universe {

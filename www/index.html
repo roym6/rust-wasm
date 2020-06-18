@@ -8,6 +8,7 @@
         position: absolute;
         top: 0;
         left: 0;
+        margin: 0;
         width: 100%;
         height: 100%;
         display: flex;
@@ -24,8 +25,38 @@
       }
       .controls {
         display: flex;
+        margin-bottom: 10px;
+      }
+      #patterns {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      #patterns > div {
+        cursor: grab;
+      }
+      .hidden {
+        position: absolute;
+        left: -1000px;
       }
     </style>
+    <script>
+      function dragStart(ev) {
+        let clone = ev.target.cloneNode(true);
+        clone.style.opacity = 0.3;
+        document.getElementById("ghost-replacement").appendChild(clone);
+        ev.dataTransfer.setDragImage(
+          clone,
+          clone.clientWidth / 2,
+          clone.clientHeight / 2
+        );
+        ev.dataTransfer.setData("text", ev.target.id);
+        ev.dataTransfer.dropEffect = "copy";
+      }
+      function dragEnd(ev) {
+        document.getElementById("ghost-replacement").innerHTML = "";
+      }
+    </script>
   </head>
   <body>
     <body>
@@ -35,6 +66,102 @@
         <button id="clear">Clear</button>
       </div>
       <canvas id="game-of-life-canvas"></canvas>
+      <h2>Drag us onto the canvas!</h2>
+      <div id="patterns">
+        <div
+          id="box-pattern"
+          draggable="true"
+          ondragstart="dragStart(event)"
+          ondragend="dragEnd(event)"
+          data-height="2"
+          data-width="2"
+          data-pattern="1111"
+        >
+          <svg
+            draggable="true"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 66 66"
+            width="45"
+            height="45"
+          >
+            <rect width="100%" height="100%" fill-opacity="0" />
+            <rect width="32" height="32" x="17" y="17" fill="#000" />
+            <line
+              x1="33"
+              y1="0"
+              x2="33"
+              y2="66"
+              stroke="#c0c0c0"
+              stroke-width="66"
+              stroke-dasharray="2,14"
+            />
+            <line
+              x1="0"
+              y1="33"
+              x2="66"
+              y2="33"
+              stroke="#c0c0c0"
+              stroke-width="66"
+              stroke-dasharray="2,14"
+            />
+          </svg>
+        </div>
+        <div
+          id="glider-gun-pattern"
+          draggable="true"
+          ondragstart="dragStart(event)"
+          ondragend="dragEnd(event)"
+          data-height="9"
+          data-width="36"
+          data-pattern="000000000000000000000000100000000000000000000000000000000010100000000000000000000000110000001100000000000011000000000001000100001100000000000011110000000010000010001100000000000000110000000010001011000010100000000000000000000010000010000000100000000000000000000001000100000000000000000000000000000000110000000000000000000000"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 610 178"
+            width="419"
+            height="122"
+          >
+            <rect width="100%" height="100%" fill="#fff" />
+            <rect width="32" height="32" x="17" y="81" fill="#000" />
+            <rect width="16" height="48" x="177" y="81" fill="#000" />
+            <rect width="16" height="16" x="193" y="65" fill="#000" />
+            <rect width="16" height="16" x="193" y="129" fill="#000" />
+            <rect width="32" height="16" x="209" y="49" fill="#000" />
+            <rect width="32" height="16" x="209" y="145" fill="#000" />
+            <rect width="16" height="16" x="241" y="97" fill="#000" />
+            <rect width="16" height="16" x="257" y="65" fill="#000" />
+            <rect width="16" height="16" x="257" y="129" fill="#000" />
+            <rect width="16" height="48" x="273" y="81" fill="#000" />
+            <rect width="16" height="16" x="289" y="97" fill="#000" />
+            <rect width="32" height="48" x="337" y="49" fill="#000" />
+            <rect width="16" height="16" x="369" y="33" fill="#000" />
+            <rect width="16" height="16" x="369" y="97" fill="#000" />
+            <rect width="16" height="32" x="401" y="17" fill="#000" />
+            <rect width="16" height="32" x="401" y="97" fill="#000" />
+            <rect width="32" height="32" x="561" y="49" fill="#000" />
+            <line
+              x1="305"
+              y1="0"
+              x2="305"
+              y2="178"
+              stroke="#c0c0c0"
+              stroke-width="610"
+              stroke-dasharray="2,14"
+            />
+            <line
+              x1="0"
+              y1="89"
+              x2="610"
+              y2="89"
+              stroke="#c0c0c0"
+              stroke-width="178"
+              stroke-dasharray="2,14"
+            />
+          </svg>
+        </div>
+      </div>
+      <!-- Container for the drag image -->
+      <div id="ghost-replacement" class="hidden"></div>
       <script src="./bootstrap.js"></script>
     </body>
   </body>

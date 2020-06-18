@@ -9,7 +9,7 @@ mod universe;
 mod utils;
 
 use crate::universe::Universe;
-use crate::utils::{cancel_animation_frame, element_by_id, request_animation_frame};
+use crate::utils::{cancel_animation_frame, element_by_id, request_animation_frame, window};
 
 // When the `wee_alloc` feature is enabled, use `wee_alloc` as the global
 // allocator.
@@ -24,10 +24,11 @@ macro_rules! log {
     }
 }
 
-static CELL_SIZE: u32 = 5; // px
+static CELL_SIZE: u32 = 10; // px
 static GRID_COLOR: &str = "#CCCCCC";
 static DEAD_COLOR: &str = "#FFFFFF";
 static ALIVE_COLOR: &str = "#000000";
+static HOVER_COLOR: &str = "#FF5500";
 
 #[wasm_bindgen]
 pub fn run() -> Result<(), JsValue> {
@@ -101,7 +102,9 @@ pub fn run() -> Result<(), JsValue> {
     // Handles cell clicking
     {
         let universe = Rc::clone(&universe);
+        let canvas_elem = canvas_elem.clone();
         let canvas_copy = canvas.clone();
+        let context = Rc::clone(&context);
 
         let cell_click_handler = Closure::wrap(Box::new(move |event: web_sys::MouseEvent| {
             let bounding_rect = canvas_elem.get_bounding_client_rect();
@@ -128,6 +131,13 @@ pub fn run() -> Result<(), JsValue> {
         cell_click_handler.forget();
     }
 
+    add_drag_handlers(
+        canvas_elem.clone(),
+        Rc::clone(&context),
+        Rc::clone(&universe),
+        Rc::clone(&animation_id),
+    );
+
     // Starts simulation
     {
         let animation_id = Rc::clone(&animation_id);
@@ -137,6 +147,123 @@ pub fn run() -> Result<(), JsValue> {
     }
 
     Ok(())
+}
+
+fn add_drag_handlers(
+    canvas_elem: web_sys::Element,
+    context: Rc<web_sys::CanvasRenderingContext2d>,
+    universe: Rc<RefCell<Universe>>,
+    animation_id: Rc<RefCell<i32>>,
+) {
+    let window = window();
+    let canvas_html_elem = canvas_elem
+        .clone()
+        .dyn_into::<web_sys::HtmlElement>()
+        .unwrap();
+
+    let canvas = canvas_elem
+        .clone()
+        .dyn_into::<web_sys::HtmlCanvasElement>()
+        .unwrap();
+    let height = universe.borrow().height();
+    let width = universe.borrow().width();
+    let prefab_universe: Rc<RefCell<Option<Universe>>> = Rc::new(RefCell::new(None));
+
+    {
+        let prefab_universe = Rc::clone(&prefab_universe);
+        let drag_start_handler = Closure::wrap(Box::new(move |event: web_sys::DragEvent| {
+            if *animation_id.borrow() != 0 {
+                // TODO: update button text
+                cancel_animation_frame(*animation_id.borrow());
+                *animation_id.borrow_mut() = 0;
+            }
+            let src_id = event
+                .data_transfer()
+                .unwrap()
+                .get_data("text/plain")
+                .unwrap();
+            let elem = utils::html_element_by_id(src_id.as_str());
+            *prefab_universe.borrow_mut() = Some(Universe::from(elem));
+        }) as Box<dyn FnMut(_)>);
+        // TODO: can this be canvas instead of window?
+        window.set_ondragstart(Some(drag_start_handler.as_ref().unchecked_ref()));
+        drag_start_handler.forget();
+    }
+
+    let painted_cells: Rc<RefCell<Vec<(u32, u32)>>> = Rc::new(RefCell::new(vec![]));
+
+    {
+        let context = Rc::clone(&context);
+        let universe = Rc::clone(&universe);
+        let prefab_universe = Rc::clone(&prefab_universe);
+        let painted_cells = Rc::clone(&painted_cells);
+
+        // TODO: needs edge logic for shapes that wrap around world on borders
+        let drag_over_handler = Closure::wrap(Box::new(move |event: web_sys::DragEvent| {
+            event.dyn_ref::<web_sys::Event>().unwrap().prevent_default();
+            reset_cells(&context, &universe.borrow(), &painted_cells.borrow());
+            painted_cells.borrow_mut().clear();
+
+            let bounding_rect = canvas_elem.get_bounding_client_rect();
+            let scale_x = canvas.width() as f64 / bounding_rect.width();
+            let scale_y = canvas.height() as f64 / bounding_rect.height();
+
+            let canvas_left = (event.client_x() as f64 - bounding_rect.left()) * scale_x;
+            let canvas_top = (event.client_y() as f64 - bounding_rect.top()) * scale_y;
+
+            let prefab_height = prefab_universe.borrow().as_ref().unwrap().height();
+            let prefab_width = prefab_universe.borrow().as_ref().unwrap().width();
+
+            let row = ((canvas_top / (CELL_SIZE + 1) as f64) - (prefab_height / 2) as f64)
+                .round()
+                .min(height as f64 - 1f64) as u32;
+            let col = ((canvas_left / (CELL_SIZE + 1) as f64) - (prefab_width / 2) as f64)
+                .round()
+                .min(width as f64 - 1f64) as u32;
+
+            let hover_style = JsValue::from(String::from(HOVER_COLOR));
+            context.set_fill_style(&hover_style);
+            for prefab_row in 0..prefab_height {
+                for prefab_col in 0..prefab_width {
+                    context.fill_rect(
+                        ((col + prefab_col) * (CELL_SIZE + 1) + 1) as f64,
+                        ((row + prefab_row) * (CELL_SIZE + 1) + 1) as f64,
+                        CELL_SIZE as f64,
+                        CELL_SIZE as f64,
+                    );
+                    painted_cells
+                        .borrow_mut()
+                        .push((row + prefab_row, col + prefab_col));
+                }
+            }
+
+            // TODO: need to return false?
+            // false
+        }) as Box<dyn FnMut(_)>);
+        canvas_html_elem.set_ondragover(Some(drag_over_handler.as_ref().unchecked_ref()));
+        drag_over_handler.forget();
+    }
+
+    let drop_handler = Closure::wrap(Box::new(move |event: web_sys::DragEvent| {
+        event.dyn_ref::<web_sys::Event>().unwrap().prevent_default();
+        event
+            .dyn_ref::<web_sys::Event>()
+            .unwrap()
+            .stop_propagation();
+
+        for (row, col) in painted_cells.borrow().iter() {
+            // TODO: this shouldn't be toggle
+            universe.borrow_mut().toggle_cell(*row, *col);
+        }
+        // TODO: rename func
+        reset_cells(&context, &universe.borrow(), &painted_cells.borrow());
+        painted_cells.borrow_mut().clear();
+        *prefab_universe.borrow_mut() = None;
+    }) as Box<dyn FnMut(_)>);
+    canvas_html_elem.set_ondrop(Some(drop_handler.as_ref().unchecked_ref()));
+    drop_handler.forget();
+
+    // TODO: add drag end handler
 }
 
 fn add_clear_handler(
@@ -223,4 +350,52 @@ fn draw_cells(context: &web_sys::CanvasRenderingContext2d, universe: &Universe) 
     }
 
     context.stroke();
+}
+
+// TODO: this is very similar to draw_cells, maybe refactor into one?
+fn reset_cells(
+    context: &web_sys::CanvasRenderingContext2d,
+    universe: &Universe,
+    cells_to_reset: &Vec<(u32, u32)>,
+) {
+    let alive_style = JsValue::from(String::from(ALIVE_COLOR));
+    context.set_fill_style(&alive_style);
+    for (row, col) in cells_to_reset.clone().iter() {
+        // TODO: needs edge logic for shapes that wrap around world on borders
+        if *row >= universe.height() || *col >= universe.width() {
+            continue;
+        }
+
+        let idx = universe.get_index(*row, *col);
+        if universe.cells()[idx] != cell::Cell::Alive {
+            continue;
+        }
+
+        context.fill_rect(
+            (col * (CELL_SIZE + 1) + 1) as f64,
+            (row * (CELL_SIZE + 1) + 1) as f64,
+            CELL_SIZE as f64,
+            CELL_SIZE as f64,
+        );
+    }
+
+    let dead_style = JsValue::from(String::from(DEAD_COLOR));
+    context.set_fill_style(&dead_style);
+    for (row, col) in cells_to_reset.clone().iter() {
+        // TODO: needs edge logic for shapes that wrap around world on borders
+        if *row >= universe.height() || *col >= universe.width() {
+            continue;
+        }
+        let idx = universe.get_index(*row, *col);
+        if universe.cells()[idx] != cell::Cell::Dead {
+            continue;
+        }
+
+        context.fill_rect(
+            (col * (CELL_SIZE + 1) + 1) as f64,
+            (row * (CELL_SIZE + 1) + 1) as f64,
+            CELL_SIZE as f64,
+            CELL_SIZE as f64,
+        );
+    }
 }
