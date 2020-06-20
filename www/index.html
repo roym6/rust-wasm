@@ -25,7 +25,11 @@
       }
       .controls {
         display: flex;
+        align-items: center;
         margin-bottom: 10px;
+      }
+      .tip {
+        margin-left: 10px;
       }
       #patterns {
         display: flex;
@@ -71,6 +75,7 @@
       <div class="controls">
         <button id="play-pause"></button>
         <button id="clear">Clear Board</button>
+        <div class="tip">(Click individual cells to toggle)</div>
       </div>
       <canvas id="game-of-life-canvas"></canvas>
       <h2>Drag us onto the canvas!</h2>
