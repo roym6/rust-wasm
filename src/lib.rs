@@ -176,6 +176,7 @@ fn add_drag_handlers(
                 // TODO: update button text
                 cancel_animation_frame(*animation_id.borrow());
                 *animation_id.borrow_mut() = 0;
+                element_by_id("play-pause").dyn_into::<web_sys::HtmlButtonElement>().unwrap().set_inner_text("▶");
             }
             let src_id = event
                 .data_transfer()
